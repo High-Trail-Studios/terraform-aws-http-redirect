@@ -1,0 +1,49 @@
+// CloudFront Function (cloudfront-js-2.0), viewer-request event.
+// Rendered by Terraform's templatefile(); do not edit the deployed copy.
+// Every request is answered here at the edge, so the origin is never contacted.
+
+var TARGET = ${target_json};
+var STATUS_CODE = ${redirect_code};
+var PRESERVE_PATH = ${preserve_path};
+
+var DESCRIPTIONS = {
+  301: "Moved Permanently",
+  302: "Found",
+  307: "Temporary Redirect",
+  308: "Permanent Redirect"
+};
+
+// CloudFront passes query string values through still URL-encoded, so they
+// are joined back together as-is rather than re-encoded.
+function serializeQuery(querystring) {
+  var parts = [];
+  Object.keys(querystring).forEach(function (key) {
+    var param = querystring[key];
+    var values = param.multiValue ? param.multiValue : [param];
+    values.forEach(function (v) {
+      parts.push(v.value === "" ? key : key + "=" + v.value);
+    });
+  });
+  return parts.join("&");
+}
+
+function handler(event) {
+  var request = event.request;
+  var location = TARGET;
+
+  if (PRESERVE_PATH) {
+    location += request.uri;
+    var query = serializeQuery(request.querystring || {});
+    if (query) {
+      location += "?" + query;
+    }
+  }
+
+  return {
+    statusCode: STATUS_CODE,
+    statusDescription: DESCRIPTIONS[STATUS_CODE],
+    headers: {
+      location: { value: location }
+    }
+  };
+}
