@@ -20,7 +20,7 @@ http(s)://www.example.com/...       ──301──▶  https://new.example.org/
 
 ```hcl
 module "redirect" {
-  source = "github.com/hightrailstudios/terraform-aws-http-redirect"
+  source = "github.com/High-Trail-Studios/terraform-aws-http-redirect"
 
   source_hostnames  = ["example.com", "www.example.com"]
   target_url        = "https://new.example.org"
@@ -59,7 +59,7 @@ the rollout happens in two phases.
 
 ```hcl
 module "redirect" {
-  source = "github.com/hightrailstudios/terraform-aws-http-redirect"
+  source = "github.com/High-Trail-Studios/terraform-aws-http-redirect"
 
   source_hostnames = ["old.example.com"]
   target_url       = "https://new.example.org"
