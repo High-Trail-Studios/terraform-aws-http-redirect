@@ -44,8 +44,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 1.8 is the first OpenTofu release with mock providers.
-        version: ["1.8.0", "latest"]
+        # 1.8 is the first OpenTofu release with mock providers; 1.8.0 itself
+        # fails to convert mocked list values to sets, which 1.8.9 handles.
+        version: ["1.8.9", "latest"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2

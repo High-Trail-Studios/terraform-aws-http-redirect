@@ -331,7 +331,9 @@ tofu test                      # the same, under OpenTofu
 ```
 
 CI runs all of these on Terraform 1.7.5 and the latest release, and on
-OpenTofu 1.8.0 and the latest release.
+OpenTofu 1.8.9 and the latest release. The module itself works on OpenTofu
+1.8.0, but that release's test framework mishandles mocked set values, so run
+the tests on 1.8.9 or later.
 
 The **live integration test** deploys a real redirect for
 `httpredirect-test.<zone>`, checks it with `curl`, and destroys it. It takes

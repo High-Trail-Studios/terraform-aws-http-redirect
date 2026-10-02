@@ -382,7 +382,8 @@ run "rejects_empty_hostnames" {
 run "rejects_too_many_hostnames" {
   command = plan
   variables {
-    source_hostnames = [for i in range(11) : "h${i}.example.com"]
+    # Literal list: older OpenTofu releases do not allow function calls here.
+    source_hostnames = ["h0.example.com", "h1.example.com", "h2.example.com", "h3.example.com", "h4.example.com", "h5.example.com", "h6.example.com", "h7.example.com", "h8.example.com", "h9.example.com", "h10.example.com"]
   }
   expect_failures = [var.source_hostnames]
 }
