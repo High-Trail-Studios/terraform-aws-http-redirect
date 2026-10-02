@@ -1,5 +1,5 @@
 variable "source_hostnames" {
-  description = "Hostnames to redirect FROM, e.g. [\"example.com\", \"www.example.com\"]. All share one certificate and one CloudFront distribution."
+  description = "Hostnames to redirect FROM, e.g. [\"example.com\", \"www.example.com\"]. 1-10 lowercase hostnames with no scheme, path, port, or wildcard. All share one certificate (the first is its primary name) and one CloudFront distribution. Each must not already be an alias on another CloudFront distribution."
   type        = list(string)
 
   validation {
@@ -22,7 +22,7 @@ variable "source_hostnames" {
 }
 
 variable "target_url" {
-  description = "URL to redirect TO, e.g. \"https://new.example.org\" or \"https://new.example.org/landing\"."
+  description = "Absolute http:// or https:// URL to redirect TO, e.g. \"https://new.example.org\" or \"https://new.example.org/landing\". May include a path; may include a query string only when preserve_path is false."
   type        = string
 
   validation {

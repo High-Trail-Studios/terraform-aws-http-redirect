@@ -109,18 +109,10 @@ has none of those, you can't point the apex at CloudFront from that provider.
 > delete them, renewal fails and the redirect starts serving an expired
 > certificate when the current one runs out.
 
-## Inputs
+## Redirect behavior
 
-| Name | Type | Default | Description |
-|---|---|---|---|
-| `source_hostnames` | `list(string)` | required | Hostnames to redirect from. Lowercase, no scheme, no wildcards, 1–10 entries. The first entry is the certificate's primary name. |
-| `target_url` | `string` | required | `http://` or `https://` URL to redirect to. It may include a path. |
-| `route53_zone_name` | `string` | `null` | Public hosted zone that contains every source hostname. If set, DNS is managed for you. |
-| `redirect_code` | `number` | `301` | `301`, `302`, `307`, or `308`. See [Choosing a status code](#choosing-a-status-code). |
-| `preserve_path` | `bool` | `true` | Append the request's path and query string to `target_url`. If `false`, every request goes to `target_url` exactly. |
-| `tags` | `map(string)` | `{}` | Merged into the tags on the certificate and the distribution. |
-
-The rendered `Location` header for each setting:
+The `Location` header produced for each combination of `target_url` and
+`preserve_path`:
 
 | `target_url` | `preserve_path` | Request | `Location` |
 |---|---|---|---|
@@ -132,17 +124,33 @@ The rendered `Location` header for each setting:
 there's no correct way to merge two query strings. Plan fails with an
 explanation if you try.
 
+See [Choosing a status code](#choosing-a-status-code) before picking
+`redirect_code`.
+
+<!-- BEGIN_TF_DOCS -->
+## Inputs
+
+| Name | Description | Type | Default | Required |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_source_hostnames"></a> [source\_hostnames](#input\_source\_hostnames) | Hostnames to redirect FROM, e.g. ["example.com", "www.example.com"]. 1-10 lowercase hostnames with no scheme, path, port, or wildcard. All share one certificate (the first is its primary name) and one CloudFront distribution. Each must not already be an alias on another CloudFront distribution. | `list(string)` | n/a | yes |
+| <a name="input_target_url"></a> [target\_url](#input\_target\_url) | Absolute http:// or https:// URL to redirect TO, e.g. "https://new.example.org" or "https://new.example.org/landing". May include a path; may include a query string only when preserve\_path is false. | `string` | n/a | yes |
+| <a name="input_preserve_path"></a> [preserve\_path](#input\_preserve\_path) | When true, the request path and query string are appended to target\_url (old.com/a?b=1 -> new.com/a?b=1). When false, every request goes to target\_url exactly. | `bool` | `true` | no |
+| <a name="input_redirect_code"></a> [redirect\_code](#input\_redirect\_code) | HTTP status code to send. 301/308 are permanent and are cached by browsers with no expiry, so they are hard to undo. Use 302/307 while you are still testing. | `number` | `301` | no |
+| <a name="input_route53_zone_name"></a> [route53\_zone\_name](#input\_route53\_zone\_name) | Public Route 53 hosted zone that contains every source hostname. When set, the module creates the certificate validation and alias records. When null, the records are returned as outputs for you to create at your DNS provider. | `string` | `null` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to add to every taggable resource, merged with the module's identifying tags. | `map(string)` | `{}` | no |
+
 ## Outputs
 
 | Name | Description |
-|---|---|
-| `cloudfront_distribution_id` | Distribution ID. |
-| `cloudfront_domain_name` | `dxxxx.cloudfront.net`, which every source hostname must point at. |
-| `cloudfront_hosted_zone_id` | Hosted zone ID for alias records (`Z2FDTNDATAQYW2`). |
-| `acm_certificate_arn` | ARN of the certificate in us-east-1. |
-| `certificate_validation_records` | `[{hostname, name, type, value}]`, the records ACM needs to validate. |
-| `redirect_dns_records` | `[{name, type, value}]`, the records that point each hostname at CloudFront. |
-| `dns_managed_by_module` | `true` when the module created the records in Route 53. |
+| ---- | ----------- |
+| <a name="output_acm_certificate_arn"></a> [acm\_certificate\_arn](#output\_acm\_certificate\_arn) | ARN of the us-east-1 ACM certificate covering the source hostnames. |
+| <a name="output_certificate_validation_records"></a> [certificate\_validation\_records](#output\_certificate\_validation\_records) | DNS records that prove ownership to ACM. Created automatically in Route 53 mode; with another DNS provider, create these yourself (phase 1). |
+| <a name="output_cloudfront_distribution_id"></a> [cloudfront\_distribution\_id](#output\_cloudfront\_distribution\_id) | ID of the CloudFront distribution that serves the redirect. |
+| <a name="output_cloudfront_domain_name"></a> [cloudfront\_domain\_name](#output\_cloudfront\_domain\_name) | CloudFront domain name (dxxxx.cloudfront.net) that the source hostnames must point at. |
+| <a name="output_cloudfront_hosted_zone_id"></a> [cloudfront\_hosted\_zone\_id](#output\_cloudfront\_hosted\_zone\_id) | Route 53 hosted zone ID for CloudFront alias records (the same for every distribution). |
+| <a name="output_dns_managed_by_module"></a> [dns\_managed\_by\_module](#output\_dns\_managed\_by\_module) | True when the module created the DNS records in Route 53; false when you must create them yourself. |
+| <a name="output_redirect_dns_records"></a> [redirect\_dns\_records](#output\_redirect\_dns\_records) | DNS records that send each source hostname to CloudFront. Created automatically in Route 53 mode; with another DNS provider, create these yourself (phase 2). A zone apex cannot be a CNAME: use your provider's ALIAS, ANAME, or CNAME-flattening record instead. |
+<!-- END_TF_DOCS -->
 
 ## How it works
 
@@ -329,6 +337,11 @@ node --test tests/function     # CloudFront Function logic, no AWS needed
 terraform test                 # module unit tests with a mock provider, no AWS needed
 tofu test                      # the same, under OpenTofu
 ```
+
+The Inputs and Outputs tables are generated from `variables.tf` and
+`outputs.tf` by [terraform-docs](https://terraform-docs.io), and CI fails if
+they're out of date. After changing a variable or output, run
+`terraform-docs .` (v0.24 or later) and commit the result.
 
 CI runs all of these on Terraform 1.7.5 and the latest release, and on
 OpenTofu 1.8.9 and the latest release. The module itself works on OpenTofu
