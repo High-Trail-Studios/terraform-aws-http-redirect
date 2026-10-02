@@ -62,8 +62,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
-        with:
-          config-file: .terraform-docs.yml
-          output-method: inject
-          fail-on-diff: true
+      - name: Install terraform-docs
+        env:
+          VERSION: v0.24.0
+        run: |
+          base=https://github.com/terraform-docs/terraform-docs/releases/download/$VERSION
+          curl -sSLO "$base/terraform-docs-$VERSION-linux-amd64.tar.gz"
+          curl -sSL "$base/terraform-docs-$VERSION.sha256sum" | grep linux-amd64.tar.gz | sha256sum -c
+          tar xzf "terraform-docs-$VERSION-linux-amd64.tar.gz" terraform-docs
+      - run: ./terraform-docs . --output-check
