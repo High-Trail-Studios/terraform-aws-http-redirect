@@ -338,6 +338,11 @@ terraform test                 # module unit tests with a mock provider, no AWS 
 tofu test                      # the same, under OpenTofu
 ```
 
+To run the same checks as CI's `pre-commit` job before each commit (formatting,
+whitespace, private keys and other secrets), install
+[pre-commit](https://pre-commit.com) 3.2 or later and OpenTofu, then run
+`pre-commit install`.
+
 The Inputs and Outputs tables are generated from `variables.tf` and
 `outputs.tf` by [terraform-docs](https://terraform-docs.io), and CI fails if
 they're out of date. After changing a variable or output, run
